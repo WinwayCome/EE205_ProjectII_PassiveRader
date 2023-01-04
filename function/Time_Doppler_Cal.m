@@ -22,26 +22,38 @@ function g = Time_Doppler_Cal(Col_Agg)
     figure;
     f = 2120000000;
     c = 300000000;
+    v_rela = f_delta./f.*c;
+    t = 0:0.5:9.5;
+    t = [t(1:2), t(4: 20)];
+    v_rela = [v_rela(1:2), v_rela(4:20)];
+    P = polyfit(t, v_rela, 4);
+    t = 0:0.1:9.5;
+    v_rela = P(1).* t.^4 + P(2).*t.^3 + P(3).*t.^2 + P(4).*t + P(5);
+    v_real = zeros(1, length(v_rela));
     d = 70;
     x = 0;
     x_sum = zeros(1,20);
-    v = 0;
-    v_rela = f_delta./f.*c;
-    v_real = zeros(1, 20);
-    for i = 1:20
-        d = d-x
-        b = atan(250/d);
-        v_real(i) = v_rela(i)./cos(b)
-        x = v_real(i).*0.5
-        x_sum(i) = x;
-        v = v_real(i)
+    for i = 1:length(v_rela)
+        if i == 1
+            d = d-x;
+            b = atan(250/d);
+            cos(b)
+            v_real(i) = v_rela(i)./cos(b);
+            x_sum(i) = x;
+        else
+            d = d-x;
+            b = atan(250/d);
+            cos(b)
+            v_real(i) = v_rela(i)./cos(b);
+            x = (v_real(i)+v_real(i-1))./2.*0.1;
+            x_sum(i) = x_sum(i-1)+x;
+        end
     end
-    t = 0:0.5:9.5;
     figure;
-    plot(t, v_rela);
+    plot(t, v_rela), title("v rela");
     figure;
-    plot(t, v_real);
+    plot(t, v_real), title("v real");
     figure;
-    plot(t, x_sum);
+    plot(t, x_sum), title("x sum");
     toc
 end
