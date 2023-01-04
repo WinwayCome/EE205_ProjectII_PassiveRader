@@ -1,19 +1,17 @@
-function g = Time_Doppler_Cal(Col_Agg)
+function g = Time_Doppler_Cal_Parallel(Col_Agg)
     tic
-    g = zeros(size(Col_Agg, 1), size(Col_Agg, 2));
-    f_delta = zeros(1, 20);
-    n = size(Col_Agg, 3);
-    for i = 1:n
-        [~, I] = max(Col_Agg(:,:,i), [], 'all', 'linear');
-        [rol, col] = ind2sub(size(Col_Agg(:,:,i)), I);
+    Col_Agg_Parallel = gpuArray(Col_Agg);
+    g = gpuArray(zeros(size(Col_Agg_Parallel, 1), size(Col_Agg_Parallel, 2)));
+    f_delta = gpuArray(zeros(1, 20));
+    n = size(Col_Agg_Parallel, 3);
+    parfor i = 1:n
+        link = gpuArray(Col_Agg_Parallel(:,:,i));
+        [~, I] = max(link, [], 'all', 'linear');
+        [rol, col] = ind2sub(size(link), I);
 	    f_delta(i) = -40+2.*(col-1);
-        g(i,:) = mapminmax(Col_Agg(rol, :, i), 0, 5);
-        for k = 1:length(g(i,:))
-            if g(i, k) < 2.5
-                g(i, k) = 0;
-            end
-        end
+        g(i,:) = mapminmax(link(rol, :), 0, 5);
     end
+    g(g < 2.5) = 0;
     T = 0:0.5:9.5;
     fD = -40:2:40;
     [A, B] = meshgrid(fD, T);
